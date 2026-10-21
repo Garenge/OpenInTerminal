@@ -25,7 +25,7 @@ class FinderSync: FIFinderSync {
             directoryURLs.formUnion(mountedVolumes)
         }
         finderSync.directoryURLs = directoryURLs
-        NSLog("OpenInTerminal Finder extension monitoring: %@",
+        NSLog("FinderSync.swift init: monitoring directories: %@",
               directoryURLs.map(\.path).sorted().joined(separator: ", "))
 
         // Monitor volumes

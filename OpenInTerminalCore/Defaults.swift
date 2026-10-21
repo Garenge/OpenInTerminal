@@ -23,12 +23,16 @@ public var Defaults: UserDefaults = {
 
     let store = GroupDefaults ?? UserDefaults.standard
     migrateLegacyGroupDefaultsIfNeeded(to: store)
-    logw("Using defaults suite \(Constants.Id.Group)")
+    logw("Defaults.swift Defaults: using defaults suite \(Constants.Id.Group)")
     return store
 }()
 
 /// Copy keys from the unprefixed `group.` suite used before macOS 26.
 private func migrateLegacyGroupDefaultsIfNeeded(to destination: UserDefaults) {
+    // Only the host can read the legacy suite. An extension must not mark a
+    // migration complete before the host has had a chance to copy the settings.
+    guard Bundle.main.bundleURL.pathExtension != "appex" else { return }
+
     guard destination.integer(forKey: defaultsMigrationVersionKey) < currentDefaultsMigrationVersion else {
         return
     }
