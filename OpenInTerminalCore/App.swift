@@ -8,6 +8,7 @@
 
 import Foundation
 import ScriptingBridge
+import os.log
 
 public enum AppType: String, Codable {
     case terminal
@@ -108,6 +109,7 @@ extension App: Openable {
     }
     
     public func openInSandbox(_ urls: [URL]) throws {
+        guard !urls.isEmpty else { throw OITError.wrongUrl }
         // Build the invocation as a list of discrete arguments — the leading
         // program, the app-specific option tokens (trusted config from
         // getOpenArguments), then the raw target paths as individual elements.
@@ -134,15 +136,23 @@ extension App: Openable {
             }
         }
 
-        // script
-        guard let scriptURL = ScriptManager.shared.getScriptURL(with: Constants.generalScript) else { return }
-        // excute
-        guard FileManager.default.fileExists(atPath: scriptURL.path) else { return }
-        guard let script = try? NSUserAppleScriptTask(url: scriptURL) else { return }
+        try executeSandboxOpen(arguments)
+    }
+
+    private func executeSandboxOpen(_ arguments: [String]) throws {
+        guard let scriptURL = ScriptManager.shared.getScriptURL(with: Constants.generalScript) else {
+            throw OITError.wrongUrl
+        }
+        guard FileManager.default.fileExists(atPath: scriptURL.path) else {
+            throw OITError.cannotCreateAppleScript(scriptURL.path)
+        }
+        let script = try NSUserAppleScriptTask(url: scriptURL)
         let event = ScriptManager.shared.getScriptEvent(functionName: "openApp", arguments: arguments)
-        script.execute(withAppleEvent: event) { (appleEvent, error) in
+        script.execute(withAppleEvent: event) { (_, error) in
             if let error = error {
-                logw("cannot execute applescript: \(error)")
+                os_log("App.swift executeSandboxOpen: failed to open %{public}@: %{public}@", type: .error, self.name, String(describing: error))
+            } else {
+                os_log("App.swift executeSandboxOpen: completed open request for %{public}@", self.name)
             }
         }
     }

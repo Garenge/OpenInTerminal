@@ -10,6 +10,7 @@ import Cocoa
 import FinderSync
 import OpenInTerminalCore
 import Carbon
+import os.log
 
 class FinderSync: FIFinderSync {
     
@@ -227,7 +228,7 @@ class FinderSync: FIFinderSync {
         do {
             try app.openInSandbox(urls)
         } catch {
-            logw("Failed to open \(app.name) with \(urls)")
+            os_log("FinderSync.swift open: failed to open %{public}@: %{public}@", type: .error, app.name, String(describing: error))
         }
     }
     
