@@ -18,6 +18,8 @@ class StatusMenuController: NSObject, NSMenuDelegate {
     @IBOutlet weak var copyPathMenuItem: NSMenuItem!
     @IBOutlet weak var preferencesMenuItem: NSMenuItem!
     @IBOutlet weak var quitMenuItem: NSMenuItem!
+
+    private var customMenuItems = [NSMenuItem]()
     
     // MARK: Menu life cycle
     
@@ -60,6 +62,7 @@ class StatusMenuController: NSObject, NSMenuDelegate {
     
     func menuWillOpen(_ menu: NSMenu) {
         setMenuItemTitle()
+        updateCustomMenu()
         let menuItems: [(NSMenuItem, String)] =
             [(defaultTerminalMenuItem, Constants.Key.defaultTerminalShortcut),
              (defaultEditorMenuItem, Constants.Key.defaultEditorShortcut),
@@ -87,6 +90,35 @@ class StatusMenuController: NSObject, NSMenuDelegate {
     }
     
     // MARK: Menu Item Actions
+
+    private func updateCustomMenu() {
+        customMenuItems.forEach { statusMenu.removeItem($0) }
+        let apps = DefaultsManager.shared.customMenuOptions ?? []
+        defaultTerminalMenuItem.isHidden = !apps.isEmpty
+        defaultEditorMenuItem.isHidden = !apps.isEmpty
+        customMenuItems = apps.map(makeCustomMenuItem)
+        let insertionIndex = statusMenu.index(of: copyPathMenuItem)
+        for (offset, item) in customMenuItems.enumerated() {
+            statusMenu.insertItem(item, at: insertionIndex + offset)
+        }
+    }
+
+    private func makeCustomMenuItem(_ app: App) -> NSMenuItem {
+        let item = NSMenuItem(title: app.name, action: #selector(openCustomApp(_:)), keyEquivalent: "")
+        item.target = self
+        item.representedObject = app
+        item.image = DefaultsManager.shared.getAppIcon(app)
+        return item
+    }
+
+    @objc private func openCustomApp(_ sender: NSMenuItem) {
+        guard let app = sender.representedObject as? App else { return }
+        do {
+            try app.openOutsideSandbox()
+        } catch {
+            logw("StatusMenuController.swift openCustomApp: failed to open \(app.name): \(error)")
+        }
+    }
     
     @IBAction func openDefaultTerminal(_ sender: NSMenuItem) {
         (NSApplication.shared.delegate as? AppDelegate)?.openDefaultTerminal()

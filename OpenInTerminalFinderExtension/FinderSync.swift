@@ -75,17 +75,6 @@ class FinderSync: FIFinderSync {
             }
 
         case .toolbarItemMenu:
-            // Finder Sync has no separate toolbar-click callback; this method
-            // is invoked when the user clicks the toolbar item. Run the Quick
-            // Toggle action immediately and return an empty menu so Finder
-            // does not present the Terminal / Editor / Copy Path picker.
-            // selectedItemURLs is only valid inside this call, so the action
-            // must run synchronously.
-            if DefaultsManager.shared.isQuickToggle {
-                performQuickToggleAction()
-                return NSMenu()
-            }
-
             // the toolbar menu never groups items into a submenu
             let isCustomMenuApplyToToolbar = DefaultsManager.shared.isCustomMenuApplyToToolbar
             if isCustomMenuApplyToToolbar {
@@ -276,17 +265,6 @@ class FinderSync: FIFinderSync {
     
     // MARK: - Menu Actions
 
-    func performQuickToggleAction() {
-        switch DefaultsManager.shared.quickToggleType {
-        case .openWithDefaultEditor:
-            openDefaultEditor()
-        case .copyPathToClipboard:
-            copyPathToClipboard()
-        default:
-            openDefaultTerminal()
-        }
-    }
-    
     @objc func openDefaultTerminal() {
         let terminal = DefaultsManager.shared.defaultTerminal ?? SupportedApps.terminal.app
         open(terminal)
